@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGA - Instituto Victoria F. de Asprella (OEP)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel Import/Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#1b2a47',
+                            900: '#0f172a',
+                            950: '#0a0f1d',
+                        },
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                        },
+                        oep: {
+                            red: '#991b1b',
+                            gold: '#b45309',
+                            green: '#15803d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: #fff !important; color: #000 !important; }
+            .shadow-sm, .shadow, .shadow-lg { box-shadow: none !important; }
+            .border { border-color: #cbd5e1 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Header / Navbar -->
+    <header class="bg-navy-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand & Logo -->
+                <div class="flex items-center space-x-3">
+                    
+                    <div>
+                        <h1 class="font-bold text-lg md:text-xl leading-tight tracking-wide text-white">INSTITUTO VICTORIA F. DE ASPRELLA</h1>
+                        <p class="text-xs text-amber-400 font-semibold tracking-wider">SIGA - Control de Ausentismo Docente</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex space-x-1">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center space-x-2 text-white bg-slate-800">
+                        <i class="fa-solid fa-chart-pie text-amber-400"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('saldos')" id="nav-saldos" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-calculator text-slate-400"></i>
+                        <span>Saldos por Docente</span>
+                    </button>
+                    <button onclick="switchTab('carga')" id="nav-carga" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus text-slate-400"></i>
+                        <span>Cargar Licencia</span>
+                    </button>
+                    <button onclick="switchTab('registro')" id="nav-registro" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-list-check text-slate-400"></i>
+                        <span>Planilla General</span>
+                    </button>
+                    <button onclick="switchTab('abm')" id="nav-abm" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-sliders text-slate-400"></i>
+                        <span>ABM Maestros</span>
+                    </button>
+                </nav>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="loadSampleData()" title="Cargar datos institucionales de prueba" class="hidden sm:flex items-center space-x-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+                        <i class="fa-solid fa-database text-amber-400"></i>
+                        <span>Datos Demo</span>
+                    </button>
+                    <button onclick="window.print()" title="Imprimir reporte" class="flex items-center space-x-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+                        <i class="fa-solid fa-print"></i>
+                        <span class="hidden sm:inline">Imprimir</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div class="md:hidden flex overflow-x-auto bg-navy-950 px-2 py-2 border-t border-slate-800 space-x-1 text-xs">
+            <button onclick="switchTab('dashboard')" id="mobile-nav-dashboard" class="mobile-nav-btn px-3 py-1.5 rounded text-slate-200 font-medium whitespace-nowrap bg-slate-800">Dashboard</button>
+            <button onclick="switchTab('saldos')" id="mobile-nav-saldos" class="mobile-nav-btn px-3 py-1.5 rounded text-slate-400 font-medium whitespace-nowrap">Saldos Docentes</button>
+            <button onclick="switchTab('carga')" id="mobile-nav-carga" class="mobile-nav-btn px-3 py-1.5 rounded text-slate-400 font-medium whitespace-nowrap">Cargar Licencia</button>
+            <button onclick="switchTab('registro')" id="mobile-nav-registro" class="mobile-nav-btn px-3 py-1.5 rounded text-slate-400 font-medium whitespace-nowrap">Planilla</button>
+            <button onclick="switchTab('abm')" id="mobile-nav-abm" class="mobile-nav-btn px-3 py-1.5 rounded text-slate-400 font-medium whitespace-nowrap">ABM</button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+            <!-- Header Banner -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    
+                    <div>
+                        <h2 class="text-xl font-bold text-navy-900">Resumen Institucional de Licencias y Ausentismo</h2>
+                        <p class="text-slate-500 text-sm mt-0.5">Control de artículos estatutarios (114f1, 114a1, 114a2, 114a2.8, 114a5b1, 114o1)</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 w-full md:w-auto">
+                    <button onclick="switchTab('carga')" class="w-full md:w-auto bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors flex items-center justify-center space-x-2 shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Cargar Nueva Licencia</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metric Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1 -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Días Ausencia</p>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-total-dias">0</h3>
+                        <p class="text-xs text-slate-500 mt-1"><span id="kpi-total-registros">0</span> registros cargados</p>
+                    </div>
+                    <div class="bg-blue-50 text-brand-600 p-3.5 rounded-xl">
+                        <i class="fa-solid fa-calendar-xmark text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Docentes con Ausencia</p>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-docentes-afectados">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">de un total de <span id="kpi-total-docentes-nomina">0</span> docentes</p>
+                    </div>
+                    <div class="bg-indigo-50 text-indigo-600 p-3.5 rounded-xl">
+                        <i class="fa-solid fa-user-graduate text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Art. 114f1 (Fam. Enfermo)</p>
+                        <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-dias-114f1">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Días acumulados (Tope 20d/docente)</p>
+                    </div>
+                    <div class="bg-amber-50 text-amber-600 p-3.5 rounded-xl">
+                        <i class="fa-solid fa-house-medical text-xl"></i>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Art. 114a1 (Ordinarias)</p>
+                        <h3 class="text-2xl font-bold text-emerald-600 mt-1" id="kpi-dias-114a1">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Días acumulados (Tope 25d/docente)</p>
+                    </div>
+                    <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl">
+                        <i class="fa-solid fa-notes-medical text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Bar Chart: Artículos de Licencia -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-bar text-brand-600"></i>
+                            <span>Días Inasistidos por Artículo estatutario</span>
+                        </h3>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chartArticulos"></canvas>
+                    </div>
+                </div>
+
+                <!-- Doughnut Chart: Ratio Justificación -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2 mb-4">
+                        <i class="fa-solid fa-chart-pie text-brand-600"></i>
+                        <span>Estado de Justificación</span>
+                    </h3>
+                    <div class="relative h-56 w-full my-auto">
+                        <canvas id="chartJustificados"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Records Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                        <i class="fa-solid fa-clock-rotate-left text-brand-600"></i>
+                        <span>Últimos Partes de Ausentismo</span>
+                    </h3>
+                    <button onclick="switchTab('registro')" class="text-xs font-semibold text-brand-600 hover:text-brand-800">
+                        Ver planilla completa &rarr;
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3">Fecha Inicio</th>
+                                <th class="px-6 py-3">Docente</th>
+                                <th class="px-6 py-3">Asignatura / Nivel</th>
+                                <th class="px-6 py-3">Artículo / Licencia</th>
+                                <th class="px-6 py-3 text-center">Días</th>
+                                <th class="px-6 py-3 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-recent-table" class="divide-y divide-slate-100">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: SALDOS Y RESUMEN POR DOCENTE -->
+        <section id="tab-saldos" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-navy-900">Control de Saldos de Licencias por Docente</h2>
+                    <p class="text-slate-500 text-sm mt-0.5">Seguimiento individual de consumos e indicadores de límites máximos</p>
+                </div>
+                <div class="w-full md:w-72">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="saldos-search" oninput="renderSaldos()" placeholder="Buscar docente por nombre o DNI..." class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Docentes Cards Grid -->
+            <div id="saldos-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Dynamically generated teacher balance cards -->
+            </div>
+        </section>
+
+        <!-- TAB 3: CARGA DE AUSENTISMO -->
+        <section id="tab-carga" class="tab-content hidden space-y-6">
+            <div class="max-w-3xl mx-auto bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="bg-navy-900 text-white px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-lg">Carga de Licencia / Inasistencia Docente</h2>
+                        <p class="text-xs text-slate-300">Complete la información requerida por el estatuto institucional</p>
+                    </div>
+                    <i class="fa-solid fa-file-signature text-2xl text-amber-400"></i>
+                </div>
+
+                <form id="form-ausentismo" onsubmit="handleFormSubmit(event)" class="p-6 space-y-5">
+                    <!-- Docente y Materia -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Docente <span class="text-rose-500">*</span></label>
+                            <select id="form-docente" required onchange="updateFormBalanceIndicator()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                                <option value="">Seleccione Docente...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Asignatura / Nivel <span class="text-rose-500">*</span></label>
+                            <select id="form-materia" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                                <option value="">Seleccione Asignatura / Cargo...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Artículo de Licencia & Live Balance Widget -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Artículo de Licencia <span class="text-rose-500">*</span></label>
+                        <select id="form-articulo" required onchange="updateFormBalanceIndicator()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                            <option value="">Seleccione el Artículo Estatutario...</option>
+                        </select>
+                    </div>
+
+                    <!-- Realtime Balance Alert Box -->
+                    <div id="form-balance-alert" class="hidden p-3.5 rounded-lg border text-xs flex items-start space-x-3 transition-all">
+                        <i id="form-balance-icon" class="fa-solid fa-circle-info text-base mt-0.5"></i>
+                        <div class="flex-grow">
+                            <span id="form-balance-text" class="font-medium block"></span>
+                            <span id="form-balance-subtext" class="text-[11px] block mt-0.5 opacity-90"></span>
+                        </div>
+                    </div>
+
+                    <!-- Fechas y Días -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Fecha Inicio <span class="text-rose-500">*</span></label>
+                            <input type="date" id="form-fecha-inicio" required onchange="calculateDays()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Fecha Fin <span class="text-rose-500">*</span></label>
+                            <input type="date" id="form-fecha-fin" required onchange="calculateDays()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Días Totales</label>
+                            <input type="number" id="form-dias" readonly value="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-100 font-bold text-slate-800">
+                        </div>
+                    </div>
+
+                    <!-- Estado Justificación & Observaciones -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Estado del Certificado / Trámite <span class="text-rose-500">*</span></label>
+                            <select id="form-justificado" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                                <option value="Sí">Justificado (Certificado Presentado)</option>
+                                <option value="No">Injustificado (Sin Certificado)</option>
+                                <option value="En Trámite">En Trámite de Presentación</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Diagnóstico Breve / Observación</label>
+                            <input type="text" id="form-observaciones" placeholder="Ej: Dr. Pérez M.P. 5412 - Reposo médico" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+                        <button type="button" onclick="resetForm()" class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-100 font-medium rounded-lg text-sm transition-colors">
+                            Limpiar
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg text-sm shadow transition-colors flex items-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Registrar Parte</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 4: PLANILLA GENERAL -->
+        <section id="tab-registro" class="tab-content hidden space-y-6">
+            <!-- Filter Toolbar -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+                    <div class="relative w-full md:w-80">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Buscar por docente, materia o nota..." class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <select id="filter-articulo" onchange="applyFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="">Todos los Artículos</option>
+                        </select>
+
+                        <select id="filter-justificado" onchange="applyFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="">Todos los Estados</option>
+                            <option value="Sí">Justificados</option>
+                            <option value="No">No Justificados</option>
+                            <option value="En Trámite">En Trámite</option>
+                        </select>
+
+                        <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Exportar Excel (TSV)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-navy-900 text-white text-xs uppercase font-semibold">
+                            <tr>
+                                <th class="px-4 py-3">Fecha Inicio</th>
+                                <th class="px-4 py-3">Fecha Fin</th>
+                                <th class="px-4 py-3">Docente</th>
+                                <th class="px-4 py-3">Asignatura / Nivel</th>
+                                <th class="px-4 py-3">Artículo Licencia</th>
+                                <th class="px-4 py-3 text-center">Días</th>
+                                <th class="px-4 py-3 text-center">Estado</th>
+                                <th class="px-4 py-3">Observaciones</th>
+                                <th class="px-4 py-3 text-right no-print">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="planilla-table-body" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                    <div>
+                        Mostrando <span id="table-count-visible" class="font-bold text-slate-700">0</span> de <span id="table-count-total" class="font-bold text-slate-700">0</span> registros
+                    </div>
+                    <span>Formato delimitado por pestañas listo para copiar a Excel</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: ABM MAESTROS -->
+        <section id="tab-abm" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-navy-900">Alta, Baja y Modificación (ABM) Maestros</h2>
+                <p class="text-slate-500 text-sm mt-0.5">Gestión de la nómina de docentes, asignaturas/materias y artículos de licencias estatutarias</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- ABM Docentes -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b pb-3">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-users-gear text-brand-600"></i>
+                            <span>Docentes</span>
+                        </h3>
+                    </div>
+                    
+                    <form onsubmit="addDocente(event)" class="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <input type="text" id="abm-docente-nombre" placeholder="Nombre completo (Ej: Dra. Carmen Varela)" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 bg-white">
+                        <input type="text" id="abm-docente-dni" placeholder="DNI / Legajo" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 bg-white">
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-1.5 rounded text-xs transition-colors">
+                            + Agregar Docente Individual
+                        </button>
+                    </form>
+
+                    <!-- Importar Docentes masivamente -->
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-navy-900"><i class="fa-solid fa-file-import text-brand-600 mr-1"></i> Importación Masiva</span>
+                            <button onclick="downloadDocentesTemplate()" class="text-[11px] text-brand-600 underline font-medium">Plantilla Excel</button>
+                        </div>
+                        <p class="text-[11px] text-slate-600">Suba un archivo Excel (.xlsx, .xls), CSV o TXT (separado por comas, punto y coma o tabulaciones).</p>
+                        <input type="file" id="import-docentes-file" accept=".xlsx, .xls, .csv, .txt" onchange="importDocentes(event)" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer">
+                    </div>
+
+                    <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 border rounded-lg">
+                        <ul id="abm-docentes-list" class="divide-y divide-slate-100 text-xs">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ABM Materias -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b pb-3">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-book-bookmark text-brand-600"></i>
+                            <span>Asignaturas / Materias</span>
+                        </h3>
+                    </div>
+
+                    <form onsubmit="addMateria(event)" class="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <input type="text" id="abm-materia-nombre" placeholder="Nombre (Ej: NTICx 4° Año)" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 bg-white">
+                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-1.5 rounded text-xs transition-colors">
+                            + Agregar Asignatura Individual
+                        </button>
+                    </form>
+
+                    <!-- Importar Materias masivamente -->
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-navy-900"><i class="fa-solid fa-file-import text-brand-600 mr-1"></i> Importación Masiva</span>
+                            <button onclick="downloadMateriasTemplate()" class="text-[11px] text-brand-600 underline font-medium">Plantilla Excel</button>
+                        </div>
+                        <p class="text-[11px] text-slate-600">Suba un archivo Excel (.xlsx, .xls), CSV o TXT con el listado de materias.</p>
+                        <input type="file" id="import-materias-file" accept=".xlsx, .xls, .csv, .txt" onchange="importMaterias(event)" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer">
+                    </div>
+
+                    <div class="max-h-60 overflow-y-auto border rounded-lg">
+                        <ul id="abm-materias-list" class="divide-y divide-slate-100 text-xs">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ABM Licencias / Artículos -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between border-b pb-3">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-scale-balanced text-brand-600"></i>
+                            <span>Artículos de Licencias</span>
+                        </h3>
+                    </div>
+
+                    <form onsubmit="addOrUpdateArticulo(event)" class="space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <input type="hidden" id="abm-art-id">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="abm-art-codigo" required placeholder="Código (ej: 114f1)" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                            <input type="number" id="abm-art-tope" placeholder="Tope Días (vacío = sin tope)" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                        </div>
+                        <input type="text" id="abm-art-nombre" required placeholder="Nombre (ej: Familiar Enfermo)" class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                        <input type="text" id="abm-art-descripcion" placeholder="Descripción estatutaria..." class="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                        <div class="flex space-x-2">
+                            <button type="submit" id="btn-save-articulo" class="flex-grow bg-brand-600 hover:bg-brand-700 text-white font-medium py-1.5 rounded text-xs transition-colors">
+                                + Guardar / Crear Artículo
+                            </button>
+                            <button type="button" onclick="cancelArticuloEdit()" id="btn-cancel-articulo" class="hidden px-2.5 bg-slate-200 text-slate-700 font-medium py-1.5 rounded text-xs hover:bg-slate-300">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="max-h-60 overflow-y-auto border rounded-lg">
+                        <ul id="abm-articulos-list" class="divide-y divide-slate-100 text-xs">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para Edición -->
+    <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="bg-navy-900 text-white px-5 py-3 flex items-center justify-between">
+                <h3 class="font-bold text-base">Editar Registro de Licencia</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Docente</label>
+                    <input type="text" id="edit-docente" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50" readonly>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Artículo</label>
+                        <select id="edit-articulo" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Estado</label>
+                        <select id="edit-justificado" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                            <option value="Sí">Justificado</option>
+                            <option value="No">Injustificado</option>
+                            <option value="En Trámite">En Trámite</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Observaciones</label>
+                    <textarea id="edit-observaciones" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></textarea>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-end space-x-2">
+                <button onclick="closeEditModal()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100">Cancelar</button>
+                <button onclick="saveEditModal()" class="px-4 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-medium hover:bg-brand-700">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Official OEP Logo Base64/SVG fallback
+
+        // Master Catalogue of License Articles (Estatuto Docente)
+        // Old static MASTER_ARTICULOS replaced
+        const OLD_ART = [
+            { id: '114f1', codigo: '114f1', nombre: 'Familiar Enfermo', tope: 20, descripcion: 'Licencia por atención de familiar a cargo con certificado' },
+            { id: '114a1', codigo: '114a1', nombre: 'Licencia Ordinaria', tope: 25, descripcion: 'Licencia afección ordinaria de salud' },
+            { id: '114a2', codigo: '114a2', nombre: 'Extraordinaria', tope: null, descripcion: 'Licencia por afección extraordinaria de salud' },
+            { id: '114a2.8', codigo: '114a2.8', nombre: 'Crónica', tope: null, descripcion: 'Licencia por enfermedad crónica' },
+            { id: '114a5b1', codigo: '114a5b1', nombre: 'Mayor Jerarquía', tope: null, descripcion: 'Desempeño de cargo de mayor jerarquía' },
+            { id: '114o1', codigo: '114o1', nombre: 'Sin Haberes', tope: null, descripcion: 'Licencia por asuntos particulares sin goce de haberes' }
+        ];
+
+        
+        // Master Catalogue of License Articles (Estatuto Docente) - Loaded dynamically
+        const DEFAULT_ARTICULOS = [
+            { id: '114f1', codigo: '114f1', nombre: 'Familiar Enfermo', tope: 20, descripcion: 'Licencia por atención de familiar a cargo con certificado' },
+            { id: '114a1', codigo: '114a1', nombre: 'Licencia Ordinaria', tope: 25, descripcion: 'Licencia afección ordinaria de salud' },
+            { id: '114a2', codigo: '114a2', nombre: 'Extraordinaria', tope: null, descripcion: 'Licencia por afección extraordinaria de salud' },
+            { id: '114a2.8', codigo: '114a2.8', nombre: 'Crónica', tope: null, descripcion: 'Licencia por enfermedad crónica' },
+            { id: '114a5b1', codigo: '114a5b1', nombre: 'Mayor Jerarquía', tope: null, descripcion: 'Desempeño de cargo de mayor jerarquía' },
+            { id: '114o1', codigo: '114o1', nombre: 'Sin Haberes', tope: null, descripcion: 'Licencia por asuntos particulares sin goce de haberes' }
+        ];
+
+        let MASTER_ARTICULOS = JSON.parse(localStorage.getItem('siga_articulos')) || DEFAULT_ARTICULOS;
+
+        // Master Initial Docentes
+        const INITIAL_DOCENTES = [
+            { id: 1, nombre: 'Gómez, Roberto', dni: '28.450.120' },
+            { id: 2, nombre: 'Martínez, Ana María', dni: '31.220.910' },
+            { id: 3, nombre: 'López, Carlos Alberto', dni: '25.890.330' },
+            { id: 4, nombre: 'Fernández, Lucía', dni: '34.112.009' },
+            { id: 5, nombre: 'Rodríguez, Miguel', dni: '29.780.441' }
+        ];
+
+        // Master Initial Materias
+        const INITIAL_MATERIAS = [
+            'Docente Primaria', 'Docente Secundaria', 'Matemáticas', 'Lengua y Literatura',
+            'Preceptoría', 'Coordinación Pastoral', 'Educación Física'
+        ];
+
+        // Initial Sample Records
+        const INITIAL_RECORDS = [
+            { id: 101, docenteId: 1, docente: 'Gómez, Roberto', materia: 'Docente Secundaria', articulo: '114f1', fechaInicio: '2026-03-02', fechaFin: '2026-03-06', dias: 5, justificado: 'Sí', observaciones: 'Certificado Dr. Rossi' },
+            { id: 102, docenteId: 1, docente: 'Gómez, Roberto', materia: 'Docente Secundaria', articulo: '114f1', fechaInicio: '2026-05-10', fechaFin: '2026-05-22', dias: 13, justificado: 'Sí', observaciones: 'Cuidado de madre' },
+            { id: 103, docenteId: 2, docente: 'Martínez, Ana María', materia: 'Preceptoría', articulo: '114a1', fechaInicio: '2026-04-12', fechaFin: '2026-04-16', dias: 5, justificado: 'Sí', observaciones: 'Reposo ambulatorio' },
+            { id: 104, docenteId: 3, docente: 'López, Carlos Alberto', materia: 'Educación Física', articulo: '114a2.8', fechaInicio: '2026-06-01', fechaFin: '2026-06-10', dias: 10, justificado: 'Sí', observaciones: 'Tratamiento prolongado' },
+            { id: 105, docenteId: 5, docente: 'Rodríguez, Miguel', materia: 'Docente Primaria', articulo: '114o1', fechaInicio: '2026-09-01', fechaFin: '2026-09-15', dias: 15, justificado: 'Sí', observaciones: 'Licencia personal' }
+        ];
+
+        // State variables
+        let records = JSON.parse(localStorage.getItem('siga_records')) || INITIAL_RECORDS;
+        let docentes = JSON.parse(localStorage.getItem('siga_docentes')) || INITIAL_DOCENTES;
+        let materias = JSON.parse(localStorage.getItem('siga_materias')) || INITIAL_MATERIAS;
+
+        // Chart instances
+        let chartArticulosInstance = null;
+        let chartJustificadosInstance = null;
+
+        // On Load initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set logos
+            
+            
+
+            // Set default date for form
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('form-fecha-inicio').value = today;
+            document.getElementById('form-fecha-fin').value = today;
+
+            populateSelects();
+            renderDashboard();
+            renderSaldos();
+            renderPlanilla();
+            renderABM();
+        });
+
+        function saveData() {
+            localStorage.setItem('siga_records', JSON.stringify(records));
+            localStorage.setItem('siga_docentes', JSON.stringify(docentes));
+            localStorage.setItem('siga_materias', JSON.stringify(materias));
+            localStorage.setItem('siga_articulos', JSON.stringify(MASTER_ARTICULOS));
+        }
+
+        function loadSampleData() {
+            records = [...INITIAL_RECORDS];
+            docentes = [...INITIAL_DOCENTES];
+            materias = [...INITIAL_MATERIAS];
+            MASTER_ARTICULOS = JSON.parse(JSON.stringify(DEFAULT_ARTICULOS));
+            saveData();
+            populateSelects();
+            refreshAllViews();
+            alert('Se cargaron exitosamente los datos de prueba del Instituto Victoria F. de Asprella.');
+        }
+
+        function refreshAllViews() {
+            renderDashboard();
+            renderSaldos();
+            renderPlanilla();
+            renderABM();
+        }
+
+        // Populate dropdown options across forms and filters
+        function populateSelects() {
+            // Docente Select
+            const docSelect = document.getElementById('form-docente');
+            docSelect.innerHTML = '<option value="">Seleccione Docente...</option>' + 
+                docentes.map(d => `<option value="${d.id}">${d.nombre} (${d.dni || 'Sin DNI'})</option>`).join('');
+
+            // Materia Select
+            const matSelect = document.getElementById('form-materia');
+            matSelect.innerHTML = '<option value="">Seleccione Asignatura / Cargo...</option>' + 
+                materias.map(m => `<option value="${m}">${m}</option>`).join('');
+
+            // Articulo Select
+            const artSelect = document.getElementById('form-articulo');
+            artSelect.innerHTML = '<option value="">Seleccione el Artículo Estatutario...</option>' + 
+                MASTER_ARTICULOS.map(a => `<option value="${a.codigo}">Art. ${a.codigo} - ${a.nombre} ${a.tope ? `(Max ${a.tope}d)` : '(Sin tope fixed)'}</option>`).join('');
+
+            // Filter Articulo
+            const filterArt = document.getElementById('filter-articulo');
+            filterArt.innerHTML = '<option value="">Todos los Artículos</option>' + 
+                MASTER_ARTICULOS.map(a => `<option value="${a.codigo}">Art. ${a.codigo}</option>`).join('');
+
+            // Edit Modal Articulo
+            const editArt = document.getElementById('edit-articulo');
+            editArt.innerHTML = MASTER_ARTICULOS.map(a => `<option value="${a.codigo}">Art. ${a.codigo} - ${a.nombre}</option>`).join('');
+        }
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-slate-800', 'text-white');
+                activeNav.classList.remove('text-slate-300');
+            }
+
+            // Mobile nav sync
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+            const activeMobile = document.getElementById(`mobile-nav-${tabId}`);
+            if (activeMobile) {
+                activeMobile.classList.add('bg-slate-800', 'text-white');
+            }
+
+            if (tabId === 'dashboard') {
+                setTimeout(renderDashboardCharts, 100);
+            }
+        }
+
+        // Calculate Days
+        function calculateDays() {
+            const startStr = document.getElementById('form-fecha-inicio').value;
+            const endStr = document.getElementById('form-fecha-fin').value;
+            if (startStr && endStr) {
+                const start = new Date(startStr);
+                const end = new Date(endStr);
+                const diffTime = end - start;
+                if (diffTime >= 0) {
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    document.getElementById('form-dias').value = diffDays;
+                } else {
+                    document.getElementById('form-dias').value = 1;
+                }
+            }
+            updateFormBalanceIndicator();
+        }
+
+        // Realtime Balance Calculator in Registration Form
+        function updateFormBalanceIndicator() {
+            const docenteId = document.getElementById('form-docente').value;
+            const articuloCodigo = document.getElementById('form-articulo').value;
+            const currentDays = parseInt(document.getElementById('form-dias').value) || 1;
+            const alertBox = document.getElementById('form-balance-alert');
+
+            if (!docenteId || !articuloCodigo) {
+                alertBox.classList.add('hidden');
+                return;
+            }
+
+            const doc = docentes.find(d => d.id == docenteId);
+            const art = MASTER_ARTICULOS.find(a => a.codigo === articuloCodigo);
+
+            if (!doc || !art) return;
+
+            // Compute accumulated days for this teacher and article
+            const usedDays = records
+                .filter(r => r.docenteId == docenteId && r.articulo === articuloCodigo)
+                .reduce((acc, r) => acc + r.dias, 0);
+
+            alertBox.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800', 'bg-rose-50', 'border-rose-200', 'text-rose-800', 'bg-blue-50', 'border-blue-200', 'text-blue-800');
+
+            const textEl = document.getElementById('form-balance-text');
+            const subtextEl = document.getElementById('form-balance-subtext');
+            const iconEl = document.getElementById('form-balance-icon');
+
+            if (art.tope !== null) {
+                const totalAfter = usedDays + currentDays;
+                const remaining = art.tope - usedDays;
+
+                if (totalAfter > art.tope) {
+                    alertBox.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+                    iconEl.className = 'fa-solid fa-triangle-exclamation text-rose-600 text-base mt-0.5';
+                    textEl.textContent = `¡ALERTA DE SUPERACIÓN DE TOPE! (Art. ${art.codigo})`;
+                    subtextEl.textContent = `${doc.nombre} ya consumió ${usedDays} de ${art.tope} días. Con esta nueva carga (${currentDays}d) sumará ${totalAfter} días y excederá el máximo anual en ${totalAfter - art.tope} día(s).`;
+                } else if (remaining <= 5) {
+                    alertBox.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
+                    iconEl.className = 'fa-solid fa-circle-exclamation text-amber-600 text-base mt-0.5';
+                    textEl.textContent = `Atención: Próximo a alcanzar el tope de ${art.tope} días anuales.`;
+                    subtextEl.textContent = `${doc.nombre} tiene ${usedDays} días usados. Con esta carga le quedarán ${art.tope - totalAfter} días disponibles.`;
+                } else {
+                    alertBox.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+                    iconEl.className = 'fa-solid fa-circle-check text-emerald-600 text-base mt-0.5';
+                    textEl.textContent = `Saldo disponible suficiente para Art. ${art.codigo}`;
+                    subtextEl.textContent = `Días consumidos previos: ${usedDays}/${art.tope}. Días restantes después de este parte: ${art.tope - totalAfter} días.`;
+                }
+            } else {
+                alertBox.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-800');
+                iconEl.className = 'fa-solid fa-info-circle text-blue-600 text-base mt-0.5';
+                textEl.textContent = `Licencia Informativa Art. ${art.codigo} (${art.nombre})`;
+                subtextEl.textContent = `Este artículo no posee un tope prefijado. ${doc.nombre} acumula ${usedDays} días consumidos de este motivo.`;
+            }
+        }
+
+        // Handle Form Submit
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const docId = document.getElementById('form-docente').value;
+            const doc = docentes.find(d => d.id == docId);
+
+            if (!doc) {
+                alert('Por favor seleccione un docente válido.');
+                return;
+            }
+
+            const newRecord = {
+                id: Date.now(),
+                docenteId: parseInt(docId),
+                docente: doc.nombre,
+                materia: document.getElementById('form-materia').value,
+                articulo: document.getElementById('form-articulo').value,
+                fechaInicio: document.getElementById('form-fecha-inicio').value,
+                fechaFin: document.getElementById('form-fecha-fin').value,
+                dias: parseInt(document.getElementById('form-dias').value) || 1,
+                justificado: document.getElementById('form-justificado').value,
+                observaciones: document.getElementById('form-observaciones').value.trim()
+            };
+
+            records.unshift(newRecord);
+            saveData();
+            resetForm();
+            refreshAllViews();
+            switchTab('saldos');
+        }
+
+        function resetForm() {
+            document.getElementById('form-ausentismo').reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('form-fecha-inicio').value = today;
+            document.getElementById('form-fecha-fin').value = today;
+            document.getElementById('form-dias').value = 1;
+            document.getElementById('form-balance-alert').classList.add('hidden');
+        }
+
+        // Render Tab 1: Dashboard
+        function renderDashboard() {
+            const totalDias = records.reduce((acc, r) => acc + r.dias, 0);
+            const totalRegistros = records.length;
+            const docentesAfectados = new Set(records.map(r => r.docenteId)).size;
+            const dias114f1 = records.filter(r => r.articulo === '114f1').reduce((acc, r) => acc + r.dias, 0);
+            const dias114a1 = records.filter(r => r.articulo === '114a1').reduce((acc, r) => acc + r.dias, 0);
+
+            document.getElementById('kpi-total-dias').textContent = totalDias;
+            document.getElementById('kpi-total-registros').textContent = totalRegistros;
+            document.getElementById('kpi-docentes-afectados').textContent = docentesAfectados;
+            document.getElementById('kpi-total-docentes-nomina').textContent = docentes.length;
+            document.getElementById('kpi-dias-114f1').textContent = dias114f1;
+            document.getElementById('kpi-dias-114a1').textContent = dias114a1;
+
+            // Recent Table
+            const recent = records.slice(0, 5);
+            const tbody = document.getElementById('dashboard-recent-table');
+            if (recent.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-slate-400">Sin partes cargados</td></tr>`;
+            } else {
+                tbody.innerHTML = recent.map(r => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-3.5 text-xs font-semibold text-slate-700">${formatDate(r.fechaInicio)}</td>
+                        <td class="px-6 py-3.5 font-medium text-slate-900">${r.docente}</td>
+                        <td class="px-6 py-3.5 text-xs">${r.materia}</td>
+                        <td class="px-6 py-3.5 text-xs font-semibold text-brand-700">Art. ${r.articulo}</td>
+                        <td class="px-6 py-3.5 text-center font-bold">${r.dias}</td>
+                        <td class="px-6 py-3.5 text-center">${getBadge(r.justificado)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            renderDashboardCharts();
+        }
+
+        function renderDashboardCharts() {
+            // Articulos chart
+            const artMap = {};
+            MASTER_ARTICULOS.forEach(a => artMap[a.codigo] = 0);
+            records.forEach(r => {
+                artMap[r.articulo] = (artMap[r.articulo] || 0) + r.dias;
+            });
+
+            if (chartArticulosInstance) chartArticulosInstance.destroy();
+            const ctx1 = document.getElementById('chartArticulos').getContext('2d');
+            chartArticulosInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: MASTER_ARTICULOS.map(a => `Art. ${a.codigo}`),
+                    datasets: [{
+                        label: 'Días Acumulados',
+                        data: MASTER_ARTICULOS.map(a => artMap[a.codigo] || 0),
+                        backgroundColor: '#1d4ed8',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Justificados chart
+            const justMap = { 'Sí': 0, 'No': 0, 'En Trámite': 0 };
+            records.forEach(r => {
+                justMap[r.justificado] = (justMap[r.justificado] || 0) + r.dias;
+            });
+
+            if (chartJustificadosInstance) chartJustificadosInstance.destroy();
+            const ctx2 = document.getElementById('chartJustificados').getContext('2d');
+            chartJustificadosInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Justificado', 'Injustificado', 'En Trámite'],
+                    datasets: [{
+                        data: [justMap['Sí'], justMap['No'], justMap['En Trámite']],
+                        backgroundColor: ['#10b981', '#f43f5e', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Render Tab 2: Saldos por Docente (Detailed Cards)
+        function renderSaldos() {
+            const query = (document.getElementById('saldos-search').value || '').toLowerCase();
+            const container = document.getElementById('saldos-grid');
+
+            const filteredDocentes = docentes.filter(d => 
+                d.nombre.toLowerCase().includes(query) || (d.dni && d.dni.includes(query))
+            );
+
+            if (filteredDocentes.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center py-12 text-slate-400 bg-white rounded-xl border border-slate-200">No se encontraron docentes con ese criterio</div>`;
+                return;
+            }
+
+            container.innerHTML = filteredDocentes.map(doc => {
+                const docRecords = records.filter(r => r.docenteId === doc.id);
+                const totalDiasDoc = docRecords.reduce((acc, r) => acc + r.dias, 0);
+
+                // Build indicator bars for each statutory article
+                const articlesHtml = MASTER_ARTICULOS.map(art => {
+                    const used = docRecords.filter(r => r.articulo === art.codigo).reduce((acc, r) => acc + r.dias, 0);
+                    if (art.tope !== null) {
+                        const pct = Math.min(Math.round((used / art.tope) * 100), 100);
+                        const remaining = art.tope - used;
+                        const isExceeded = used > art.tope;
+                        const isNear = remaining <= 5 && remaining >= 0;
+
+                        let barColor = 'bg-emerald-500';
+                        let badgeHtml = `<span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Quedan ${remaining}d</span>`;
+                        
+                        if (isExceeded) {
+                            barColor = 'bg-rose-600';
+                            badgeHtml = `<span class="text-[11px] font-semibold text-rose-700 bg-rose-100 px-2 py-0.5 rounded"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Excedido por ${Math.abs(remaining)}d</span>`;
+                        } else if (isNear) {
+                            barColor = 'bg-amber-500';
+                            badgeHtml = `<span class="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Quedan ${remaining}d</span>`;
+                        }
+
+                        return `
+                            <div class="space-y-1">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-bold text-slate-800">Art. ${art.codigo} (${art.nombre})</span>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold ${isExceeded ? 'text-rose-600' : 'text-slate-700'}">${used} / ${art.tope} días</span>
+                                        ${badgeHtml}
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Articles without fixed top cap
+                        return `
+                            <div class="flex items-center justify-between text-xs py-1 border-t border-slate-100">
+                                <span class="font-medium text-slate-600">Art. ${art.codigo} (${art.nombre})</span>
+                                <span class="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">${used} días usados</span>
+                            </div>
+                        `;
+                    }
+                }).join('');
+
+                return `
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                        <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-navy-900 text-white flex items-center justify-center font-bold text-sm">
+                                    ${doc.nombre.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-base leading-snug">${doc.nombre}</h3>
+                                    <p class="text-xs text-slate-500">DNI/Legajo: ${doc.dni || 'Sin registrar'}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs uppercase font-semibold text-slate-400 block">Total Inasistencias</span>
+                                <span class="text-lg font-black text-navy-900">${totalDiasDoc} días</span>
+                            </div>
+                        </div>
+
+                        <div class="p-5 space-y-3.5 flex-grow">
+                            ${articlesHtml}
+                        </div>
+
+                        <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-slate-500">${docRecords.length} partes registrados este ciclo</span>
+                            <button onclick="filterByDocente('${doc.nombre}')" class="text-xs font-semibold text-brand-600 hover:text-brand-800">
+                                Ver historial en planilla &rarr;
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterByDocente(nombreDocente) {
+            switchTab('registro');
+            document.getElementById('filter-search').value = nombreDocente;
+            applyFilters();
+        }
+
+        // Render Tab 4: Planilla General
+        function renderPlanilla() {
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = (document.getElementById('filter-search').value || '').toLowerCase();
+            const artFilter = document.getElementById('filter-articulo').value;
+            const justFilter = document.getElementById('filter-justificado').value;
+
+            const filtered = records.filter(r => {
+                const matchSearch = r.docente.toLowerCase().includes(search) || 
+                                    r.materia.toLowerCase().includes(search) || 
+                                    r.observaciones.toLowerCase().includes(search);
+                const matchArt = artFilter === "" || r.articulo === artFilter;
+                const matchJust = justFilter === "" || r.justificado === justFilter;
+                return matchSearch && matchArt && matchJust;
+            });
+
+            const tbody = document.getElementById('planilla-table-body');
+            document.getElementById('table-count-visible').textContent = filtered.length;
+            document.getElementById('table-count-total').textContent = records.length;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-8 text-center text-slate-400">No hay registros que coincidan con los filtros aplicados</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(r => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3 text-xs font-semibold text-slate-700 whitespace-nowrap">${formatDate(r.fechaInicio)}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">${formatDate(r.fechaFin)}</td>
+                    <td class="px-4 py-3 font-medium text-slate-900">${r.docente}</td>
+                    <td class="px-4 py-3 text-xs">${r.materia}</td>
+                    <td class="px-4 py-3 text-xs font-bold text-brand-800">Art. ${r.articulo}</td>
+                    <td class="px-4 py-3 text-center font-bold text-slate-800">${r.dias}</td>
+                    <td class="px-4 py-3 text-center">${getBadge(r.justificado)}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500 truncate max-w-xs" title="${r.observaciones}">${r.observaciones || '-'}</td>
+                    <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap no-print">
+                        <button onclick="openEditModal(${r.id})" class="text-slate-400 hover:text-brand-600 p-1"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render Tab 5: ABM
+        function renderABM() {
+            // Docentes List
+            const docUl = document.getElementById('abm-docentes-list');
+            docUl.innerHTML = docentes.map(d => `
+                <li class="p-2.5 flex items-center justify-between hover:bg-slate-50">
+                    <div>
+                        <span class="font-medium text-slate-800 block">${d.nombre}</span>
+                        <span class="text-[10px] text-slate-400">DNI/Legajo: ${d.dni || 'Sin dato'}</span>
+                    </div>
+                    <button onclick="removeDocente(${d.id})" class="text-slate-400 hover:text-rose-600 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                </li>
+            `).join('');
+
+            // Materias List
+            const matUl = document.getElementById('abm-materias-list');
+            matUl.innerHTML = materias.map((m, idx) => `
+                <li class="p-2.5 flex items-center justify-between hover:bg-slate-50">
+                    <span class="font-medium text-slate-800">${m}</span>
+                    <button onclick="removeMateria(${idx})" class="text-slate-400 hover:text-rose-600 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                </li>
+            `).join('');
+
+            // Articulos List
+            const artUl = document.getElementById('abm-articulos-list');
+            artUl.innerHTML = MASTER_ARTICULOS.map(a => `
+                <li class="p-3 space-y-1 hover:bg-slate-50">
+                    <div class="flex items-center justify-between font-bold text-slate-800">
+                        <span>Art. ${a.codigo} - ${a.nombre}</span>
+                        <div class="flex items-center space-x-1">
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded mr-1">${a.tope !== null ? `Tope: ${a.tope}d` : 'Sin tope'}</span>
+                            <button onclick="editArticulo('${a.codigo}')" class="text-slate-400 hover:text-brand-600 p-1" title="Editar Licencia"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="removeArticulo('${a.codigo}')" class="text-slate-400 hover:text-rose-600 p-1" title="Eliminar Licencia"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500">${a.descripcion || ''}</p>
+                </li>
+            `).join('');
+        }
+
+        function addDocente(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('abm-docente-nombre');
+            const dniInput = document.getElementById('abm-docente-dni');
+            
+            const newDoc = {
+                id: Date.now(),
+                nombre: nameInput.value.trim(),
+                dni: dniInput.value.trim()
+            };
+
+            docentes.push(newDoc);
+            saveData();
+            nameInput.value = '';
+            dniInput.value = '';
+            populateSelects();
+            renderABM();
+            renderSaldos();
+        }
+
+        function removeDocente(id) {
+            if (confirm('¿Desea eliminar este docente de la nómina activa?')) {
+                docentes = docentes.filter(d => d.id !== id);
+                saveData();
+                populateSelects();
+                renderABM();
+                renderSaldos();
+            }
+        }
+
+        function addMateria(e) {
+            e.preventDefault();
+            const matInput = document.getElementById('abm-materia-nombre');
+            const newMat = matInput.value.trim();
+            if (newMat && !materias.includes(newMat)) {
+                materias.push(newMat);
+                saveData();
+                matInput.value = '';
+                populateSelects();
+                renderABM();
+            }
+        }
+
+        function removeMateria(idx) {
+            if (confirm('¿Eliminar esta asignatura?')) {
+                materias.splice(idx, 1);
+                saveData();
+                populateSelects();
+                renderABM();
+            }
+        }
+
+        // Edit Modal
+        function openEditModal(id) {
+            const rec = records.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('edit-id').value = rec.id;
+            document.getElementById('edit-docente').value = rec.docente;
+            document.getElementById('edit-articulo').value = rec.articulo;
+            document.getElementById('edit-justificado').value = rec.justificado;
+            document.getElementById('edit-observaciones').value = rec.observaciones || '';
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function saveEditModal() {
+            const id = parseInt(document.getElementById('edit-id').value);
+            const rec = records.find(r => r.id === id);
+            if (rec) {
+                rec.articulo = document.getElementById('edit-articulo').value;
+                rec.justificado = document.getElementById('edit-justificado').value;
+                rec.observaciones = document.getElementById('edit-observaciones').value;
+                saveData();
+                refreshAllViews();
+                closeEditModal();
+            }
+        }
+
+        function deleteRecord(id) {
+            if (confirm('¿Confirma eliminar este parte de licencia?')) {
+                records = records.filter(r => r.id !== id);
+                saveData();
+                refreshAllViews();
+            }
+        }
+
+        // CSV / Excel Export (TSV Tab Separated format)
+        function exportToCSV() {
+            if (records.length === 0) {
+                alert('No hay datos para exportar.');
+                return;
+            }
+
+            const headers = ['Fecha Inicio', 'Fecha Fin', 'Docente', 'Asignatura', 'Articulo', 'Dias', 'Justificado', 'Observaciones'];
+            const rows = records.map(r => [
+                r.fechaInicio,
+                r.fechaFin,
+                `"${r.docente}"`,
+                `"${r.materia}"`,
+                `Art. ${r.articulo}`,
+                r.dias,
+                r.justificado,
+                `"${(r.observaciones || '').replace(/"/g, '""')}"`
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + 
+                [headers.join('\t'), ...rows.map(e => e.join('\t'))].join('\n');
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `CENS4137_Asprella_Licencias_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        
+        // --- FUNCIONES PARA IMPORTACIÓN DE DOCENTES (EXCEL, CSV, TXT) ---
+        function downloadDocentesTemplate() {
+            const data = [
+                ["Nombre", "DNI"],
+                ["Gómez, Roberto", "28.450.120"],
+                ["Martínez, Ana María", "31.220.910"],
+                ["Pérez, Juan José", "33.555.777"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Docentes");
+            XLSX.writeFile(wb, "Plantilla_Importacion_Docentes.xlsx");
+        }
+
+        function importDocentes(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    processTextOrCSV(text);
+                };
+                reader.readAsText(file);
+            } else {
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    processMatrixDocentes(json);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processTextOrCSV(text) {
+            const lines = text.split(/\r?\n/);
+            let matrix = [];
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                if (line.includes('\t')) {
+                    matrix.push(line.split('\t'));
+                } else if (line.includes(';')) {
+                    matrix.push(line.split(';'));
+                } else if (line.includes(',')) {
+                    matrix.push(line.split(','));
+                } else {
+                    matrix.push([line]);
+                }
+            });
+            processMatrixDocentes(matrix);
+        }
+
+        function processMatrixDocentes(matrix) {
+            let countAdded = 0;
+            matrix.forEach((row, index) => {
+                if (!row || row.length === 0) return;
+
+                // Handle multi-item rows or single string with semicolon/comma delimiters
+                let items = [];
+                if (row.length === 1 && (String(row[0]).includes(';') || String(row[0]).includes(','))) {
+                    const delim = String(row[0]).includes(';') ? ';' : ',';
+                    items = String(row[0]).split(delim);
+                } else {
+                    items = row;
+                }
+
+                let col0 = String(items[0] || '').trim();
+                let col1 = String(items[1] || '').trim();
+
+                // Skip header row if it contains header keywords
+                if (index === 0 && (col0.toLowerCase().includes('nombre') || col0.toLowerCase().includes('docente')) && !col0.match(/\d{7,8}/)) {
+                    return;
+                }
+
+                // If items were provided as a list of names/items separated by semicolons
+                items.forEach((item, itemIdx) => {
+                    let cleanItem = String(item || '').trim();
+                    if (!cleanItem) return;
+
+                    if (cleanItem.toLowerCase().includes('nombre') || cleanItem.toLowerCase().includes('docente') || cleanItem.toLowerCase() === 'dni') return;
+
+                    let name = cleanItem;
+                    let dni = (itemIdx === 0 && col1) ? col1 : '';
+
+                    // Extract DNI if embedded inside the string (e.g. "Gómez Roberto 28.450.120" or "Gómez Roberto 28450120")
+                    const embeddedDni = name.match(/(\d{7,8}|\d{1,2}\.\d{3}\.\d{3})/);
+                    if (embeddedDni) {
+                        dni = embeddedDni[0];
+                        name = name.replace(embeddedDni[0], '').trim();
+                    }
+
+                    // Clean punctuation from name
+                    name = name.replace(/^[-,;:]+|[-,;:]+$/g, '').trim();
+
+                    if (name.length > 1) {
+                        const exists = docentes.some(d => d.nombre.toLowerCase() === name.toLowerCase());
+                        if (!exists) {
+                            docentes.push({
+                                id: Date.now() + Math.floor(Math.random() * 1000) + countAdded,
+                                nombre: name,
+                                dni: dni
+                            });
+                            countAdded++;
+                        }
+                    }
+                });
+            });
+
+            saveData();
+            populateSelects();
+            renderABM();
+            renderSaldos();
+            if (document.getElementById('import-docentes-file')) {
+                document.getElementById('import-docentes-file').value = '';
+            }
+            alert(`¡Importación finalizada! Se procesaron y agregaron ${countAdded} docentes a la nómina.`);
+        }
+
+        // --- FUNCIONES PARA IMPORTACIÓN DE MATERIAS (EXCEL, CSV, TXT) ---
+        function downloadMateriasTemplate() {
+            const data = [
+                ["Asignatura / Materia"],
+                ["NTICx 4° Año"],
+                ["Informática 5° Año"],
+                ["Sistemas Digitales 6° Año"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Materias");
+            XLSX.writeFile(wb, "Plantilla_Importacion_Materias.xlsx");
+        }
+
+        function importMaterias(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+                reader.onload = function(e) {
+                    processTextOrCSVMaterias(e.target.result);
+                };
+                reader.readAsText(file);
+            } else {
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    processMatrixMaterias(json);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processTextOrCSVMaterias(text) {
+            const lines = text.split(/\r?\n/);
+            let matrix = [];
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                if (line.includes(';')) matrix.push(line.split(';'));
+                else if (line.includes(',')) matrix.push(line.split(','));
+                else if (line.includes('\t')) matrix.push(line.split('\t'));
+                else matrix.push([line]);
+            });
+            processMatrixMaterias(matrix);
+        }
+
+        function processMatrixMaterias(matrix) {
+            let countAdded = 0;
+            matrix.forEach((row, index) => {
+                if (!row || row.length === 0) return;
+
+                row.forEach(cell => {
+                    let matName = String(cell || '').trim();
+                    if (!matName) return;
+
+                    // Skip header row
+                    if (index === 0 && (matName.toLowerCase().includes('materia') || matName.toLowerCase().includes('asignatura'))) {
+                        return;
+                    }
+
+                    if (matName.length > 1 && !materias.includes(matName)) {
+                        materias.push(matName);
+                        countAdded++;
+                    }
+                });
+            });
+
+            saveData();
+            populateSelects();
+            renderABM();
+            if (document.getElementById('import-materias-file')) {
+                document.getElementById('import-materias-file').value = '';
+            }
+            alert(`¡Importación finalizada! Se agregaron ${countAdded} asignaturas a la lista.`);
+        }
+
+        // --- FUNCIONES PARA MODIFICACIÓN DE ARTÍCULOS DE LICENCIAS ---
+        function addOrUpdateArticulo(e) {
+            e.preventDefault();
+            const artId = document.getElementById('abm-art-id').value;
+            const codigo = document.getElementById('abm-art-codigo').value.trim();
+            const nombre = document.getElementById('abm-art-nombre').value.trim();
+            const topeVal = document.getElementById('abm-art-tope').value.trim();
+            const descripcion = document.getElementById('abm-art-descripcion').value.trim();
+
+            const tope = topeVal !== '' ? parseInt(topeVal) : null;
+
+            if (artId) {
+                // Update existing
+                const index = MASTER_ARTICULOS.findIndex(a => a.codigo === artId);
+                if (index !== -1) {
+                    MASTER_ARTICULOS[index] = { id: codigo, codigo, nombre, tope, descripcion };
+                }
+            } else {
+                // Check unique code
+                if (MASTER_ARTICULOS.some(a => a.codigo === codigo)) {
+                    alert('Ya existe un artículo con ese código.');
+                    return;
+                }
+                MASTER_ARTICULOS.push({ id: codigo, codigo, nombre, tope, descripcion });
+            }
+
+            saveData();
+            cancelArticuloEdit();
+            populateSelects();
+            renderABM();
+            renderDashboard();
+            renderSaldos();
+        }
+
+        function editArticulo(codigo) {
+            const art = MASTER_ARTICULOS.find(a => a.codigo === codigo);
+            if (!art) return;
+
+            document.getElementById('abm-art-id').value = art.codigo;
+            document.getElementById('abm-art-codigo').value = art.codigo;
+            document.getElementById('abm-art-codigo').readOnly = true;
+            document.getElementById('abm-art-nombre').value = art.nombre;
+            document.getElementById('abm-art-tope').value = art.tope !== null ? art.tope : '';
+            document.getElementById('abm-art-descripcion').value = art.descripcion || '';
+
+            document.getElementById('btn-save-articulo').textContent = 'Guardar Cambios';
+            document.getElementById('btn-cancel-articulo').classList.remove('hidden');
+        }
+
+        function cancelArticuloEdit() {
+            document.getElementById('abm-art-id').value = '';
+            document.getElementById('abm-art-codigo').value = '';
+            document.getElementById('abm-art-codigo').readOnly = false;
+            document.getElementById('abm-art-nombre').value = '';
+            document.getElementById('abm-art-tope').value = '';
+            document.getElementById('abm-art-descripcion').value = '';
+
+            document.getElementById('btn-save-articulo').textContent = '+ Guardar / Crear Artículo';
+            document.getElementById('btn-cancel-articulo').classList.add('hidden');
+        }
+
+        function removeArticulo(codigo) {
+            if (confirm(`¿Confirma eliminar el artículo estatutario ${codigo}?`)) {
+                MASTER_ARTICULOS = MASTER_ARTICULOS.filter(a => a.codigo !== codigo);
+                saveData();
+                populateSelects();
+                renderABM();
+                renderDashboard();
+                renderSaldos();
+            }
+        }
+
+        // Helpers
+        function getBadge(status) {
+            if (status === 'Sí') {
+                return `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Justificado</span>`;
+            } else if (status === 'No') {
+                return `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200">Injustificado</span>`;
+            } else {
+                return `<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">En Trámite</span>`;
+            }
+        }
+
+        function formatDate(str) {
+            if (!str) return '-';
+            const parts = str.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return str;
+        }
+    </script>
+</body>
+</html>
